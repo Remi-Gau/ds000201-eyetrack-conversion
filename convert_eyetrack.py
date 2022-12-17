@@ -1,4 +1,5 @@
 import json
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -9,11 +10,34 @@ raw_bids_path = Path("/home/remi/gin/Nilsonne/ds000201/")
 
 output_dir = raw_bids_path.joinpath("..", "raw")
 
+log_file = Path().joinpath("log.txt")
+
+if Path().joinpath("log.txt").exists():
+    log_file.unlink()
+
+
+def add_to_log(msg):
+
+    msg = f"\n{msg}"
+
+    warnings.warn(msg)
+
+    if not log_file.exists():
+        with open(log_file, "w") as log:
+            log.write(msg)
+    else:
+        with open(log_file, "a") as log:
+            log.write(msg)
+
 
 def create_tsv_from_file(input_file):
 
-    with open(input_file) as f:
-        lines = f.readlines()
+    with open(input_file, encoding="utf-8") as f:
+        try:
+            lines = f.readlines()
+        except UnicodeDecodeError:
+            add_to_log(f"Could not read {input_file}")
+            return
 
     header = None
     ScreenSize = None
@@ -25,14 +49,11 @@ def create_tsv_from_file(input_file):
 
         if line_content[0] == "5":
             header = line_content[1:]
-            print(f"header: {header}")
             first_line = i
         elif line_content[0] == "3" and line_content[1] == "ScreenSize":
             ScreenSize = [x.replace("\n", "") for x in line_content[2:]]
-            print(f"ScreenSize: {ScreenSize}")
         elif line_content[0] == "3" and line_content[1] == "ViewingDistance":
             ViewingDistance = [x.replace("\n", "") for x in line_content[2:]]
-            print(f"ViewingDistance: {ViewingDistance}")
 
         if (
             (ViewingDistance is not None)
@@ -49,6 +70,50 @@ def create_tsv_from_file(input_file):
 
     with open("tmp.tsv", "w") as new:
         new.writelines(lines[first_line:])
+
+
+def get_start_time(df, input_file):
+    """grab start and remove the row"""
+    StartTime = None
+    index = df.index.values
+    if start_row := index[df["5"] == 16]:
+        StartTime = df["eye_timestamp"][start_row].values[0]
+        df.drop(index=start_row, inplace=True)
+    else:
+        add_to_log(f"No start time in {input_file}")
+
+    return StartTime, df
+
+
+def get_stop_time(df, input_file):
+    """grab start and remove the row"""
+    StopTime = None
+    index = df.index.values
+    if end_row := index[df["5"] == 12]:
+        StopTime = df["eye_timestamp"][end_row].values[0]
+        df.drop(index=end_row, inplace=True)
+    else:
+        add_to_log(f"No stop time in {input_file}")
+
+    return StopTime, df
+
+
+def reoder_columns(df):
+    """reorder columns"""
+    cols = [
+        "eye_timestamp",
+        "eye1_x_coordinate",
+        "eye1_y_coordinate",
+        "eye1_pupil_width",
+        "eye1_pupil_height",
+        "Region",
+        "Quality",
+        "Fixation",
+        "Count",
+        "Marker",
+    ]
+    df = df[cols]
+    return df
 
 
 def convert_file(input_file, output_file, sidecar_file):
@@ -69,45 +134,33 @@ def convert_file(input_file, output_file, sidecar_file):
         inplace=True,
     )
 
-    # grab start and end time and remove the rows
-    index = eye_data.index.values
-    start_row = index[eye_data["5"] == 16]
-    StartTime = eye_data["eye_timestamp"][start_row].values[0]
-    eye_data.drop(index=start_row, inplace=True)
+    (StartTime, eye_data) = get_start_time(eye_data, input_file)
+    (StopTime, eye_data) = get_stop_time(eye_data, input_file)
 
-    index = eye_data.index.values
-    end_row = index[eye_data["5"] == 12]
-    EndTime = eye_data["eye_timestamp"][end_row].values[0]
-    eye_data.drop(index=end_row, inplace=True)
-
+    # remove extra rows
     index = eye_data.index.values
     eye_data.drop(index=index[eye_data["5"] == 7], inplace=True)
 
     # make sure we only got data rows
-    assert len(eye_data["5"].unique()) == 1
+    try:
+        assert len(eye_data["5"].unique()) == 1
+    except AssertionError:
+        Exception(
+            f"More than one type of row in {input_file}:\n{eye_data['5'].unique()}"
+        )
 
     eye_data.drop(["5", "DeltaTime"], axis=1, inplace=True)
 
-    cols = [
-        "eye_timestamp",
-        "eye1_x_coordinate",
-        "eye1_y_coordinate",
-        "eye1_pupil_width",
-        "eye1_pupil_height",
-        "Region",
-        "Quality",
-        "Fixation",
-        "Count",
-        "Marker",
-    ]
-    eye_data = eye_data[cols]
+    eye_data = reoder_columns(eye_data)
 
     eye_data.to_csv(output_file, sep="\t", index=False)
 
     with open("tmp.json") as json_file:
         json_content = json.load(json_file)
-    json_content["StartTime"] = StartTime
-    json_content["EndTime"] = EndTime
+    if StartTime is not None:
+        json_content["StartTime"] = StartTime
+    if StopTime is not None:
+        json_content["EndTime"] = StopTime
     with open(sidecar_file, "w") as json_file:
         json.dump(json_content, fp=json_file, indent=4)
 
@@ -145,7 +198,7 @@ def main():
 
                 for i_file in files:
 
-                    print(i_file)
+                    print(f"  {i_file.relative_to(layout.root)}")
 
                     output_path = output_dir.joinpath(
                         f"sub-{i_subject}", f"ses-{i_session}", "func"
