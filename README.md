@@ -7,6 +7,8 @@ dataset: https://openneuro.org/datasets/ds000201/versions/1.0.3
 
 BEP020: https://bids-specification--1128.org.readthedocs.build/en/1128/modality-specific-files/eye-tracking.html
 
+current output: https://gin.g-node.org/RemiGau/ds000201-eyetrack
+
 ## Requires
 
 python >= 3.8
