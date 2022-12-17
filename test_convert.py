@@ -2,8 +2,6 @@ from pathlib import Path
 
 from convert_eyetrack import convert_file
 
-# def test_convert_file():
-
 raw_bids_path = Path("/home/remi/gin/Nilsonne/ds000201/sourcedata/EyeTrackingLogFiles")
 
 input_file = raw_bids_path.joinpath(

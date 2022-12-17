@@ -5,6 +5,8 @@ into a format compatible with BEP020.
 
 dataset: https://openneuro.org/datasets/ds000201/versions/1.0.3
 
+BEP020: https://bids-specification--1128.org.readthedocs.build/en/1128/modality-specific-files/eye-tracking.html
+
 ## Requires
 
 python >= 3.8
@@ -28,3 +30,12 @@ Run the script `convert_eyetrack.py`.
 
 See log.txt to see the errors encountered during conversion.
 
+### TODO
+
+- eye_timestamp are meant to be integer and not time values
+- the data set has pupil width and height and not eye1_pupil_size
+- missing REQUIRED metadata
+    - SamplingFrequency
+    - SampleCoordinateUnit
+    - SampleCoordinateSystem
+    - EnvironmentCoordinates
