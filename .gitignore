@@ -1,0 +1,14 @@
+*.tsv
+*.json
+
+# virtual env
+env/
+
+# vs code stuff
+.vscode/settings.json
+
+# python
+__pycache__/
+
+.pytest_cache
+
