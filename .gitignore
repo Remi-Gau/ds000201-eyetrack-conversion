@@ -1,5 +1,7 @@
 *.tsv
 *.json
+*.tmp
+tmp
 
 # virtual env
 env/
