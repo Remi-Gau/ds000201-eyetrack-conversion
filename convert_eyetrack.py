@@ -17,7 +17,6 @@ if Path().joinpath("log.txt").exists():
 
 
 def add_to_log(msg):
-
     msg = f"\n{msg}"
 
     warnings.warn(msg)
@@ -31,7 +30,6 @@ def add_to_log(msg):
 
 
 def create_tsv_from_file(input_file):
-
     with open(input_file, encoding="utf-8") as f:
         try:
             lines = f.readlines()
@@ -44,7 +42,6 @@ def create_tsv_from_file(input_file):
     ViewingDistance = None
 
     for i, i_line in enumerate(lines):
-
         line_content = i_line.split("\t")
 
         if line_content[0] == "5":
@@ -117,7 +114,6 @@ def reoder_columns(df):
 
 
 def convert_file(input_file, output_file, sidecar_file):
-
     create_tsv_from_file(input_file)
 
     eye_data = pd.read_csv("tmp.tsv", sep="\t")
@@ -166,7 +162,6 @@ def convert_file(input_file, output_file, sidecar_file):
 
 
 def main():
-
     eyetracking_sourcedata = raw_bids_path.joinpath("sourcedata", "EyeTrackingLogFiles")
 
     database_path = raw_bids_path.parent.joinpath("pybids_db")
@@ -184,11 +179,9 @@ def main():
     tasks = {"Resting": "rest", "Sleepiness": "sleepiness"}
 
     for i_subject in subjects:
-
         print(f"\nSubject {i_subject}")
 
         for i_session in sessions:
-
             print(f" Session {i_session}")
 
             for key in tasks:
@@ -197,7 +190,6 @@ def main():
                 )
 
                 for i_file in files:
-
                     print(f"  {i_file.relative_to(layout.root)}")
 
                     output_path = output_dir.joinpath(
