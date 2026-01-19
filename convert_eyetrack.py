@@ -130,8 +130,8 @@ def convert_file(input_file, output_file, sidecar_file):
         inplace=True,
     )
 
-    (StartTime, eye_data) = get_start_time(eye_data, input_file)
-    (StopTime, eye_data) = get_stop_time(eye_data, input_file)
+    StartTime, eye_data = get_start_time(eye_data, input_file)
+    StopTime, eye_data = get_stop_time(eye_data, input_file)
 
     # remove extra rows
     index = eye_data.index.values
